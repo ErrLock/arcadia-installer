@@ -1,0 +1,15 @@
+#!/bin/sh
+
+target_dir="$1"
+package="$2"
+version="$3"
+
+bold=$(tput bold)
+green=$(tput setaf 2)
+sgr=$(tput sgr0)
+
+printf "${bold}DEB_SRC:${sgr} %s-%s ..." $package $version
+mkdir -p $target_dir
+cd $target_dir
+apt-get source $package=$version >/dev/null
+printf " ${green}done${sgr}\n"
