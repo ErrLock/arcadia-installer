@@ -12,10 +12,37 @@ d-i_dsc = debian-installer_$(DI_VERSION).dsc
 d-i_tar = debian-installer_$(DI_VERSION).tar.gz
 d-i_conf = $(d-i_source)/build
 
+web_sources = $(wildcard $(srcdir)/src/web/*)
+
 all: netboot
 
 .PHONY: netboot
 netboot: %: $(d-i_conf)/dest/%/debian-installer
+
+install: netboot_install web_install
+
+.PHONY: web_install
+web_install: %_install: $(DESTDIR)$(datadir)/%
+
+.PHONY: netboot_install
+netboot_install: %_install: $(DESTDIR)$(datadir)/%
+
+.PHONY: $(DESTDIR)$(datadir)/netboot
+$(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer
+	$(INSTALL) -d "$@"
+	set -e; \
+	for arch in $(notdir $(call wildcard_d,$<)); do \
+		$(INSTALL) -d "$@/$$arch"; \
+		for file in linux initrd.gz; do \
+			$(INSTALL) -t "$@/$$arch" "$</$$arch/$$file"; \
+		done; \
+	done
+
+.PHONY: $(DESTDIR)$(datadir)/web
+$(DESTDIR)$(datadir)/web: %/web: %/netboot $(web_sources)
+	$(INSTALL) -d "$@"
+	$(INSTALL) -t "$@" $(wordlist 2,$(words $^),$^)
+	$(LINK) $< $@/netboot
 
 $(d-i_conf)/dest/%/debian-installer: $(d-i_conf)/preferences.udeb.local \
 $(d-i_conf)/pkg-lists/local

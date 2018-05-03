@@ -19,7 +19,7 @@ endif
 
 CP = $(wildcard $(make_toolsdir)/cp)
 ifeq ($(CP),)
-CP = cp -Rf
+CP = cp -R
 endif
 
 INSTALL = $(wildcard $(make_toolsdir)/install)
@@ -45,4 +45,9 @@ endif
 BASENAME = $(wildcard $(make_toolsdir)/basename)
 ifeq ($(BASENAME),)
 BASENAME = basename
+endif
+
+LINK = $(wildcard $(make_toolsdir)/link)
+ifeq ($(LINK),)
+LINK = ln -sfr
 endif

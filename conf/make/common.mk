@@ -21,6 +21,8 @@ docdir = $(datarootdir)/doc/$(pkg_name)
 libdir = $(exec_prefix)/lib
 localedir = $(datarootdir)/locale
 
+wildcard_d = $(patsubst %/,%,$(dir $(wildcard $(1)/*/.)))
+
 ifndef make_confdir
 make_confdir := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 endif
