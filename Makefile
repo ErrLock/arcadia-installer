@@ -17,8 +17,30 @@ all: netboot
 .PHONY: netboot
 netboot: %: $(d-i_conf)/dest/%
 
-$(d-i_conf)/dest/%: $(d-i_source)
+$(d-i_conf)/dest/%: $(d-i_conf)/preferences.udeb.local \
+$(d-i_conf)/pkg-lists/local
 	$(MAKE) -C $(d-i_conf) rebuild_$* USE_UDEBS_FROM=stretch
+
+$(d-i_conf)/preferences.udeb.local: conf/preferences.udeb.local $(d-i_source)
+	@$(CP) $< $@
+
+$(d-i_conf)/pkg-lists/local: $(d-i_conf)/localudebs
+	@$(RM) $@
+	@for p in $</*.udeb; do \
+		echo $$($(BASENAME) $$p | cut -d '_' -f 1) >>$@; \
+	done
+
+$(d-i_conf)/localudebs: udebs $(d-i_source)
+	@$(RM) $@/*.udeb
+	@for p in $$($(FIND) $< -name *.udeb); do \
+		$(CP) "$$p" $@/; \
+	done
+	@$(TOUCH) $@
+
+udebs: src/udebs/Makefile .FORCE
+	@$(MKDIR) $@
+	$(MAKE) -C $@ -f $< all \
+		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir)
 
 $(d-i_source): $(d-i_dsc)
 	@$(DPKG_SRC) -x "$<" $@
@@ -28,12 +50,24 @@ $(d-i_dsc): .FORCE
 
 clean: all_clean
 
-.PHONY: all_clean %_clean
-all_clean:
+.PHONY: all_clean udebs_clean %_clean
+all_clean: udebs_clean
 	-@[ -d $(d-i_conf) ] && $(MAKE) -C $(d-i_conf) all_clean || true
+
+udebs_clean: %_clean: src/%/Makefile
+	-@[ -d $* ] && $(MAKE) -C $* -f $< clean \
+		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir)
 
 %_clean:
 	-@[ -d $(d-i_conf) ] && $(MAKE) -C $(d-i_conf) clean_$* || true
 
-distclean:
-	-$(RM) $(d-i_source) $(d-i_dsc) $(d-i_tar)	
+distclean: udebs_distclean
+	-$(RM) $(d-i_source) $(d-i_dsc) $(d-i_tar)
+
+.PHONY: udebs_distclean
+udebs_distclean: %_distclean: src/%/Makefile
+	-@[ -d $* ] && $(MAKE) -C $* -f $< distclean \
+		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir)
+ifneq ($(CURDIR),$(srcdir))
+	-$(RM) $*
+endif

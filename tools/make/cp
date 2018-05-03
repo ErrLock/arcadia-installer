@@ -1,0 +1,34 @@
+#!/bin/sh
+
+el_string="[...]"
+
+max_length=$((($(tput cols) - 10) / 2))
+el_length=$((${max_length} - ${#el_string}))
+
+elipsize()
+{
+	result="$1"
+	if [ ${#result} -gt $max_length ]; then
+		result=$(printf "%s" "$result" | tail -c $el_length)
+		result="${el_string}${result}"
+	fi
+	
+	printf "%s" "$result"
+}
+
+from="$1"
+to="$2"
+
+if [ -d "$from" ] && [ -d "$to" ]; then
+	from=${from%/}
+	to=${to%/}
+fi
+
+el_from=$(elipsize "$from")
+el_to=$(elipsize "$to")
+
+bold=$(tput bold)
+sgr=$(tput sgr0)
+
+printf "${bold}COPY:${sgr} %s ${bold}->${sgr} %s\n" "$el_from" "$el_to"
+cp -R "$from" "$to"
