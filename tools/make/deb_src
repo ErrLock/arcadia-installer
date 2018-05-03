@@ -1,15 +1,24 @@
 #!/bin/sh
 
-target_dir="$1"
-package="$2"
-version="$3"
+package_req="$1"
+package=${package_req%=*}
+version=${package_req#*=}
 
 bold=$(tput bold)
+red=$(tput setaf 1)
 green=$(tput setaf 2)
 sgr=$(tput sgr0)
 
-printf "${bold}DEB_SRC:${sgr} %s-%s ..." $package $version
-mkdir -p $target_dir
-cd $target_dir
-apt-get source $package=$version >/dev/null
-printf " ${green}done${sgr}\n"
+printf "${bold}DEB_SRC:${sgr} %s" $package
+[ -n "$version" ] && printf " (%s)" $version
+printf " ..."
+
+apt-get source -d $package=$version >/dev/null
+res=$?
+if [ $res -eq 0 ]; then
+	printf " ${green}done${sgr}\n"
+else
+	printf " ${red}failed${sgr}!\n"
+fi
+
+exit $res

@@ -1,79 +1,39 @@
+pkg_name = arcadia-installer
 DI_VERSION ?= 20170615+deb9u3
-BUILDDIR ?= $(shell pwd)
-SRCDIR ?= $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 
-ifeq ($(BUILDDIR),$(SRCDIR))
-BUILDDIR := $(BUILDDIR)/build
-endif
+srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
+override srcdir := $(abspath $(srcdir))
+make_confdir := $(srcdir)/conf/make
 
-d-i_name = debian-installer-$(DI_VERSION)
-d-i = $(BUILDDIR)/installer/$(d-i_name)
-d-i_conf = $(d-i)/build
+include $(make_confdir)/common.mk
 
-SHELL = /bin/sh
-VPATH = $(BUILDDIR):$(SRCDIR)/conf::$(SRCDIR)/src
+d-i_source = debian-installer-$(DI_VERSION)
+d-i_dsc = debian-installer_$(DI_VERSION).dsc
+d-i_tar = debian-installer_$(DI_VERSION).tar.gz
+d-i_conf = $(d-i_source)/build
 
-include $(SRCDIR)/conf/tools.mk
-
-.SUFFIXES:
-.PHONY: .FORCE
-
-.PHONY: all
 all: netboot
 
-.PHONY: clean
-clean:
-	rm -Rf $(BUILDDIR)/*
-
 .PHONY: netboot
-netboot: dest/netboot
+netboot: %: $(d-i_conf)/dest/%
 
-$(BUILDDIR)/dest/netboot: $(BUILDDIR)/dest/%: conf.stamp
-	$(MAKE) -C $(d-i_conf) rebuild_$* \
-		USE_UDEBS_FROM=stretch \
-		DEST=$(dir $@)
+$(d-i_conf)/dest/%: $(d-i_source)
+	$(MAKE) -C $(d-i_conf) rebuild_$* USE_UDEBS_FROM=stretch
 
-$(BUILDDIR)/conf.stamp: conf
+$(d-i_source): $(d-i_dsc)
+	@$(DPKG_SRC) -x "$<" $@
 
-.PHONY: conf
-conf: $(d-i_conf)/preferences.udeb.local $(d-i_conf)/pkg-lists/local
+$(d-i_dsc): .FORCE
+	@$(DEB_SRC) debian-installer=$(DI_VERSION)
 
-$(d-i_conf)/preferences.udeb.local: preferences.udeb.local $(d-i)
-	@$(CP) $< $@
-	@$(TOUCH) $(BUILDDIR)/conf.stamp
+clean: all_clean
 
-$(d-i_conf)/pkg-lists/local: $(d-i_conf)/localudebs
-	$(UPD_START)
-	@rm -f $@
-	@for p in $</*.udeb; do \
-		echo $$(basename $$p | cut -d '_' -f 1) >>$@; \
-	done
-	@$(TOUCH) $(BUILDDIR)/conf.stamp
-	$(DONE)
+.PHONY: all_clean %_clean
+all_clean:
+	-@[ -d $(d-i_conf) ] && $(MAKE) -C $(d-i_conf) all_clean || true
 
-$(d-i_conf)/localudebs: udebs.list $(d-i)
-	@$(RM) $@/*.udeb
-	@for p in $$(cat $<); do \
-		$(CP) $$p $@; \
-	done
-	@$(TOUCH) $(BUILDDIR)/conf.stamp
+%_clean:
+	-@[ -d $(d-i_conf) ] && $(MAKE) -C $(d-i_conf) clean_$* || true
 
-$(d-i): %/$(d-i_name): .FORCE
-	@$(DEB_SRC) $* debian-installer $(DI_VERSION)
-
-$(BUILDDIR)/udebs.list: udebs .FORCE
-	$(UPD_START)
-	@udebs=$$(find $(BUILDDIR)/udebs -name *.udeb); \
-	if ! echo "$$udebs" | cmp -s - $@; then \
-		echo "$$udebs" >$@; \
-	else \
-		for p in $$udebs; do \
-			test $$p -nt $@ && touch -r $$p $@; \
-		done; \
-	fi; \
-	true
-	$(DONE)
-
-$(BUILDDIR)/udebs: $(BUILDDIR)/%: $(SRCDIR)/src/% .FORCE
-	$(MAKE) -C $< \
-		BUILDDIR=$@
+distclean:
+	-$(RM) $(d-i_source) $(d-i_dsc) $(d-i_tar)	

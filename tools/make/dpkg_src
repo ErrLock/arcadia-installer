@@ -1,0 +1,43 @@
+#!/bin/sh
+
+bold=$(tput bold)
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+sgr=$(tput sgr0)
+
+for opt in "$@"; do
+	case $opt in
+		-x)
+			extract="true"
+			;;
+		-)
+			:
+			;;
+		*)
+			if [ "$extract" = "true" ]; then
+				if [ -z "$x_dsc" ]; then
+					x_dsc="$opt"
+				else
+					x_target="$opt"
+				fi
+			fi
+			;;
+	esac
+done
+
+#~ eval "set -- $ARGS"
+
+if [ -n "$extract" ] && [ -n "$x_target" ]; then
+	rm -Rf "$x_target"
+fi
+
+dpkg-source "$@"
+res=$?
+
+[ $res -eq 0 ] || exit $res
+
+if [ -n "$extract" ] && [ -n "$x_target" ]; then
+	touch "$x_target"
+fi
+
+exit $res
