@@ -15,9 +15,9 @@ d-i_conf = $(d-i_source)/build
 all: netboot
 
 .PHONY: netboot
-netboot: %: $(d-i_conf)/dest/%
+netboot: %: $(d-i_conf)/dest/%/debian-installer
 
-$(d-i_conf)/dest/%: $(d-i_conf)/preferences.udeb.local \
+$(d-i_conf)/dest/%/debian-installer: $(d-i_conf)/preferences.udeb.local \
 $(d-i_conf)/pkg-lists/local
 	$(MAKE) -C $(d-i_conf) rebuild_$* USE_UDEBS_FROM=stretch
 
@@ -26,7 +26,8 @@ $(d-i_conf)/preferences.udeb.local: conf/preferences.udeb.local $(d-i_source)
 
 $(d-i_conf)/pkg-lists/local: $(d-i_conf)/localudebs
 	@$(RM) $@
-	@for p in $</*.udeb; do \
+	@$(TOUCH) $@
+	@for p in $$($(FIND) $< -name *.udeb); do \
 		echo $$($(BASENAME) $$p | cut -d '_' -f 1) >>$@; \
 	done
 
