@@ -5,6 +5,10 @@ srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
 override srcdir := $(abspath $(srcdir))
 make_confdir := $(srcdir)/conf/make
 
+ifdef DESTDIR
+override DESTDIR := $(abspath $(DESTDIR))
+endif
+
 include $(make_confdir)/common.mk
 
 d-i_source = debian-installer-$(DI_VERSION)
@@ -13,7 +17,8 @@ d-i_tar = debian-installer_$(DI_VERSION).tar.gz
 d-i_conf = $(d-i_source)/build
 
 web_sources = $(wildcard $(srcdir)/src/web/*)
-
+web_install_targets = netboot config.php $(notdir $(web_sources))
+web_install_targets := $(addprefix $(DESTDIR)$(datadir)/web/, $(web_install_targets))
 web_host := localhost:8888
 
 all: netboot
@@ -24,15 +29,21 @@ netboot: %: $(d-i_conf)/dest/%/debian-installer
 install: netboot_install web_install
 
 .PHONY: web_install
-web_install: %_install: $(DESTDIR)$(datadir)/%
+web_install: $(web_install_targets)
 
 .PHONY: netboot_install
 netboot_install: %_install: $(DESTDIR)$(datadir)/%
 
 .PHONY: web_test
+web_test: DESTDIR = test
 web_test:
-	$(MAKE) -f $(MAKEFILE_LIST) web_install DESTDIR=$(CURDIR)/test
-	php -S $(web_host) -t $(CURDIR)/test/$(datadir)/web
+	$(MAKE) -f $(MAKEFILE_LIST) web_install DESTDIR=$(DESTDIR)
+	$(INSTALL) -d $(DESTDIR)$(sysconfdir)
+	@echo "[server]" >$(DESTDIR)$(sysconfdir)/$(pkg_name).ini
+	@echo "base = 'http://$(web_host)'" >>$(DESTDIR)$(sysconfdir)/$(pkg_name).ini
+	save_traps=$$(trap); \
+	trap '$(RM) $(DESTDIR); eval "$$save_traps"' INT; \
+	php -S $(web_host) -t $(DESTDIR)$(datadir)/web
 
 .PHONY: $(DESTDIR)$(datadir)/netboot
 $(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer
@@ -45,11 +56,28 @@ $(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer
 		done; \
 	done
 
+.PHONY: $(DESTDIR)$(datadir)/web/config.php
+$(DESTDIR)$(datadir)/web/config.php: $(DESTDIR)$(datadir)/web
+	@echo '<?php' >$@
+	@echo '$$prefix = "$(DESTDIR)$(prefix)";' >>$@
+	@echo '$$datarootdir = $$prefix ."/share";' >>$@
+	@echo '$$datadir = $$datarootdir ."/$(pkg_name)";' >>$@
+	@echo '$$sysconfdir = $$prefix ."/etc";' >>$@
+	@echo '?>' >>$@
+
+
+.PHONY: $(DESTDIR)$(datadir)/web/netboot
+$(DESTDIR)$(datadir)/web/netboot: $(DESTDIR)$(datadir)/netboot \
+$(DESTDIR)$(datadir)/web
+	$(LINK_R) $< $@
+
+.PHONY: $(DESTDIR)$(datadir)/web/%
+$(DESTDIR)$(datadir)/web/%: src/web/% $(DESTDIR)$(datadir)/web
+	$(INSTALL) $< $@
+
 .PHONY: $(DESTDIR)$(datadir)/web
-$(DESTDIR)$(datadir)/web: %/web: %/netboot $(web_sources)
+$(DESTDIR)$(datadir)/web:
 	$(INSTALL) -d "$@"
-	$(INSTALL) -t "$@" $(wordlist 2,$(words $^),$^)
-	$(LINK_R) $< $@/netboot
 
 $(d-i_conf)/dest/%/debian-installer: $(d-i_conf)/preferences.udeb.local \
 $(d-i_conf)/pkg-lists/local
