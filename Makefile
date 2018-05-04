@@ -14,6 +14,8 @@ d-i_conf = $(d-i_source)/build
 
 web_sources = $(wildcard $(srcdir)/src/web/*)
 
+web_host := localhost:8888
+
 all: netboot
 
 .PHONY: netboot
@@ -26,6 +28,11 @@ web_install: %_install: $(DESTDIR)$(datadir)/%
 
 .PHONY: netboot_install
 netboot_install: %_install: $(DESTDIR)$(datadir)/%
+
+.PHONY: web_test
+web_test:
+	$(MAKE) -f $(MAKEFILE_LIST) web_install DESTDIR=$(CURDIR)/test
+	php -S $(web_host) -t $(CURDIR)/test/$(datadir)/web
 
 .PHONY: $(DESTDIR)$(datadir)/netboot
 $(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer
