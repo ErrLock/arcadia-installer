@@ -100,9 +100,9 @@ $(d-i_conf)/localudebs: udebs $(d-i_source)
 	done
 	@$(TOUCH) $@
 
-udebs: src/udebs/Makefile .FORCE
+udebs: src/udebs .FORCE
 	@$(MKDIR) $@
-	$(MAKE) -C $@ -f $< all \
+	$(MAKE) -C $@ -f $</Makefile all \
 		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir)
 
 $(d-i_source): $(d-i_dsc)
@@ -117,8 +117,8 @@ clean: all_clean
 all_clean: udebs_clean
 	-@[ -d $(d-i_conf) ] && $(MAKE) -C $(d-i_conf) all_clean || true
 
-udebs_clean: %_clean: src/%/Makefile
-	-@[ -d $* ] && $(MAKE) -C $* -f $< clean \
+udebs_clean: %_clean: src/%
+	-@[ -d $* ] && $(MAKE) -C $* -f $</Makefile clean \
 		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir)
 
 %_clean:
@@ -128,8 +128,8 @@ distclean: udebs_distclean
 	-$(RM) $(d-i_source) $(d-i_dsc) $(d-i_tar)
 
 .PHONY: udebs_distclean
-udebs_distclean: %_distclean: src/%/Makefile
-	-@[ -d $* ] && $(MAKE) -C $* -f $< distclean \
+udebs_distclean: %_distclean: src/%
+	-@[ -d $* ] && $(MAKE) -C $* -f $</Makefile distclean \
 		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir)
 ifneq ($(CURDIR),$(srcdir))
 	-$(RM) $*

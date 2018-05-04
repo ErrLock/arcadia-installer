@@ -1,0 +1,15 @@
+Template: debian-installer/arcadia-installer/title
+Type: text
+Description: Arcadia setup
+
+Template: arcadia-installer/title/profile
+Type: title
+Description: Select installation profile
+
+Template: arcadia-installer/profile
+Type: select
+Default: server
+Choices-C: server, desktop, custom
+Choices: Server, Desktop, Custom
+Description: Installation profile:
+ Choose the profile to be used for the installation process.

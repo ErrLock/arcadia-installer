@@ -15,20 +15,20 @@ clean: $(UDEBS_CLEAN)
 distclean: $(UDEBS_DISTCLEAN)
 
 .PHONY: $(UDEBS_CLEAN)
-$(UDEBS_CLEAN): %_clean: %/Makefile
-	-@[ -d $* ] && $(MAKE) -C $* -f $< clean \
+$(UDEBS_CLEAN): %_clean: %
+	-@[ -d $* ] && $(MAKE) -C $* -f $</Makefile clean \
 		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir) || true
 
 .PHONY: $(UDEBS_DISTCLEAN)
-$(UDEBS_DISTCLEAN): %_distclean: %/Makefile
-	-@[ -d $* ] && $(MAKE) -C $* -f $< distclean \
+$(UDEBS_DISTCLEAN): %_distclean: %
+	-@[ -d $* ] && $(MAKE) -C $* -f $</Makefile distclean \
 		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir) || true
 ifneq ($(CURDIR),$(srcdir))
 	-$(RM) $*
 endif
 
-$(UDEBS): %: %/Makefile .FORCE
+$(UDEBS): %: $(srcdir)/% .FORCE
 	@$(MKDIR) $@
-	$(MAKE) -C $@ -f $< all \
+	$(MAKE) -C $@ -f $</Makefile all \
 		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir)
-	@[ $@ -nt $(CURDIR) ] && $(TOUCH) $(CURDIR)
+	@[ $@ -ot $(CURDIR) ] || $(TOUCH) $(CURDIR)

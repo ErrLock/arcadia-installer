@@ -1,0 +1,18 @@
+Source: arcadia-installer
+Section: debian-installer
+Priority: optional
+Maintainer: Garinot Pierre <garinot.pierre@errlock.org>
+Build-Depends: debhelper (>= 9), dpkg-dev (>= 1.9)
+
+Package: arcadia-installer
+Architecture: all
+Depends: ${misc:Depends}, ${shlibs:Depends}, di-utils (>= 1.117)
+Description: Setup arcadia installation
+Package-Type: udeb
+XB-Installer-Menu-Item: 2350
+
+Package: partman-auto-arcadia
+Architecture: all
+Depends: ${misc:Depends}, partman-auto (>= 137)
+Description: Partman schemes for arcadia
+Package-Type: udeb

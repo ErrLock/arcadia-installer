@@ -1,0 +1,5 @@
+Template: partman-auto-arcadia/text/server_scheme
+Type: text
+# :sl1:
+# TRANSLATORS: This is a menu entry. Keep in under 55 columns/characters
+_Description: Server (lvm, multiple partitions, separate VG for /srv)

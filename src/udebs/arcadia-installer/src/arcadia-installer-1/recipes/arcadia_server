@@ -1,0 +1,64 @@
+partman-auto-arcadia/text/server_scheme ::
+
+100 100 100 ext4
+	$primary{ } $bootable{ }
+	method{ format } format{ }
+	use_filesystem{ } filesystem{ ext4 }
+	mountpoint{ /boot }
+.
+64 64 64 linux-swap
+	method{ swap } format{ }
+.
+2500 2500 -1 ext4
+	$defaultignore{ }
+	method{ lvm }
+	vg_name{ system }
+.
+500 500 500 ext4
+	$lvmok{ } in_vg{ system } lv_name{ root }
+	method{ format } format{ }
+	use_filesystem{ } filesystem{ ext4 }
+	mountpoint{ / }
+.
+500 500 500 ext4
+	$lvmok{ } in_vg{ system } lv_name{ usr }
+	method{ format } format{ }
+	use_filesystem{ } filesystem{ ext4 }
+	mountpoint{ /usr }
+.
+700 700 700 ext4
+	$lvmok{ } in_vg{ system } lv_name{ var }
+	method{ format } format{ }
+	use_filesystem{ } filesystem{ ext4 }
+	mountpoint{ /var }
+.
+100 100 100 ext4
+	$lvmok{ } in_vg{ system } lv_name{ log }
+	method{ format } format{ }
+	use_filesystem{ } filesystem{ ext4 }
+	mountpoint{ /var/log }
+.
+100 100 100 ext4
+	$lvmok{ } in_vg{ system } lv_name{ tmp }
+	method{ format } format{ }
+	use_filesystem{ } filesystem{ ext4 }
+	mountpoint{ /tmp }
+.
+100 100 100 ext4
+	$lvmok{ } in_vg{ system } lv_name{ local }
+	method{ format } format{ }
+	use_filesystem{ } filesystem{ ext4 }
+	mountpoint{ /usr/local }
+.
+100 100 100 ext4
+	$lvmok{ } in_vg{ system } lv_name{ roothome }
+	method{ format } format{ }
+	use_filesystem{ } filesystem{ ext4 }
+	mountpoint{ /root }
+.
+100 100 100 ext4
+	$lvmok{ } in_vg{ system } lv_name{ home }
+	method{ format } format{ }
+	use_filesystem{ } filesystem{ ext4 }
+	mountpoint{ /home }
+.

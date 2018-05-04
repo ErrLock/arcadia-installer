@@ -1,0 +1,75 @@
+#!/bin/sh -e
+. /usr/share/debconf/confmodule
+. /lib/preseed/preseed.sh
+
+db_capb backup
+
+error() {
+	logger -t arcadia-setup "error: $@"
+	exit 1
+}
+
+warn() {
+	logger -t arcadia-setup "warning: $@"
+}
+
+log() {
+	logger -t arcadia-setup "info: $@"
+}
+
+preseed() {
+	key="$1"
+	value="$2"
+	seen="true"
+	[ -n "$3" ] && seen="$3"
+	
+	if db_set $key "$value"; then
+		[ "$seen" != "false" ] && db_fset $key seen true
+	else
+		warn "Failed to set $key"
+	fi
+}
+
+anna-install partman-auto-arcadia
+
+STATE=1
+while true; do
+	case "$STATE" in
+		0) # Back up to menu
+			exit 10
+			;;
+		1)
+			db_settitle arcadia-installer/title/profile
+			db_input high arcadia-installer/profile || [ $? -eq 30 ]
+			;;
+		2)
+			db_get arcadia-installer/profile
+			type="$RET"
+			case $type in
+				server)
+					preseed partman-auto/choose_recipe 'arcadia_server'
+					;;
+				*)
+					db_reset partman-auto/choose_recipe
+					;;
+			esac
+			;;
+		3) # All done
+			break
+			;;
+		*)
+			error "undefined STATE '$STATE'"
+			exit 1
+			;;
+	esac
+	
+	if db_go; then
+		STATE=$(($STATE + 1))
+	else
+		STATE=$(($STATE - 1))
+	fi
+	
+	db_capb backup
+done
+
+exit 0
