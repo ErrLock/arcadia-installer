@@ -23,14 +23,30 @@ preseed() {
 	seen="true"
 	[ -n "$3" ] && seen="$3"
 	
+	db_fget $key seen || warn "Failed to get seen status for $key ($?)"
+	if [ "$RET" = "true" ]; then
+		# Don't change stuff that have already been answered (or preseed)
+		return 0
+	fi
+	
 	if db_set $key "$value"; then
-		[ "$seen" != "false" ] && db_fset $key seen true
+		if [ "$seen" != "false" ]; then
+			db_fset $key seen true || warn "Failed to set seen status for $key ($?)"
+		fi
 	else
 		warn "Failed to set $key"
 	fi
 }
 
 anna-install partman-auto-arcadia
+preseed passwd/root-login 'false'
+preseed clock-setup/utc 'true'
+preseed clock-setup/ntp 'true'
+preseed base-installer/install-recommends 'false'
+preseed apt-setup/non-free 'false'
+preseed apt-setup/contrib boolean 'false'
+preseed pkgsel/upgrade 'full-upgrade'
+preseed grub-installer/only_debian 'true'
 
 STATE=1
 while true; do
@@ -47,6 +63,7 @@ while true; do
 			type="$RET"
 			case $type in
 				server)
+					preseed partman-auto/method 'lvm'
 					preseed partman-auto/choose_recipe 'arcadia_server'
 					;;
 				*)
