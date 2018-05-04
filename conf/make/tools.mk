@@ -49,5 +49,7 @@ endif
 
 LINK = $(wildcard $(make_toolsdir)/link)
 ifeq ($(LINK),)
-LINK = ln -sfr
+LINK = ln -sf
 endif
+
+LINK_R = $(LINK) -r

@@ -42,7 +42,7 @@ $(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer
 $(DESTDIR)$(datadir)/web: %/web: %/netboot $(web_sources)
 	$(INSTALL) -d "$@"
 	$(INSTALL) -t "$@" $(wordlist 2,$(words $^),$^)
-	$(LINK) $< $@/netboot
+	$(LINK_R) $< $@/netboot
 
 $(d-i_conf)/dest/%/debian-installer: $(d-i_conf)/preferences.udeb.local \
 $(d-i_conf)/pkg-lists/local
