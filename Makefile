@@ -41,8 +41,13 @@ web_test: DESTDIR = test
 web_test:
 	$(MAKE) -f $(MAKEFILE_LIST) web_install DESTDIR=$(DESTDIR)
 	$(INSTALL) -d $(DESTDIR)$(sysconfdir)
-	@echo "[server]" >$(DESTDIR)$(sysconfdir)/$(pkg_name).ini
-	@echo "base = 'http://$(web_host)'" >>$(DESTDIR)$(sysconfdir)/$(pkg_name).ini
+	@conf="$(DESTDIR)$(sysconfdir)/$(pkg_name).ini"; \
+	echo "[server]" >$$conf; \
+	echo "base = 'http://$(web_host)'" >>$$conf; \
+	if [ -n "$(apt_proxy)" ]; then \
+		echo "[apt]" >>$$conf; \
+		echo "proxy = '$(apt_proxy)'" >>$$conf; \
+	fi
 	save_traps=$$(trap); \
 	trap '$(RM) $(DESTDIR); eval "$$save_traps"' INT; \
 	php -S $(web_host) -t $(DESTDIR)$(datadir)/web

@@ -97,6 +97,8 @@ function menu_arch()
 	);
 }
 
+echo "set params \n";
+
 if($conf->isset('server', 'boot'))
 {
 	echo "set boot_method ". $conf->get('server', 'boot') ."\n";
@@ -105,8 +107,18 @@ if($conf->isset('server', 'arch'))
 {
 	echo "set arch ". $conf->get('server', 'arch') ."\n";
 }
+if($conf->isset('apt', 'proxy'))
+{
 ?>
-set params 
+set params ${params} mirror/country=manual
+set params ${params} mirror/http/directory=/ftp.fr.debian.org/debian
+set params ${params} mirror/http/proxy=
+set params ${params} base-installer/includes=auto-apt-proxy
+<?php
+	echo "set params \${params} mirror/http/hostname=".
+		$conf->get('apt', 'proxy') ."\n";
+}
+?>
 set menu_previous menu_boot_method
 
 isset ${boot_method} || goto ${menu_previous}
@@ -120,6 +132,8 @@ isset ${arch} || goto menu_arch
 set netboot ${base}/netboot/${arch}
 kernel ${netboot}/linux initrd=rd.gz ${params}
 initrd --name rd.gz ${netboot}/initrd.gz
+show params
+prompt Press any key to boot ${boot_method} || goto ${menu_previous}
 boot
 
 :boot_rescue
