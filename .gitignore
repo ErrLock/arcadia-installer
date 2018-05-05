@@ -5,3 +5,6 @@ build/
 
 # test install
 dest/
+
+# extracted udebs
+src/udebs/*/*/

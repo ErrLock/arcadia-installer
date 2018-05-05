@@ -23,6 +23,8 @@ web_host := localhost:8888
 
 all: netboot
 
+include udebs.d
+
 .PHONY: netboot
 netboot: %: $(d-i_conf)/dest/%/debian-installer
 
@@ -84,53 +86,69 @@ $(d-i_conf)/pkg-lists/local
 	$(MAKE) -C $(d-i_conf) rebuild_$* USE_UDEBS_FROM=stretch
 
 $(d-i_conf)/preferences.udeb.local: conf/preferences.udeb.local $(d-i_source)
-	@$(CP) $< $@
+	@$(CP) "$<" "$@"
 
 $(d-i_conf)/pkg-lists/local: $(d-i_conf)/localudebs
-	@$(RM) $@
-	@$(TOUCH) $@
+	@printf "" >"$@"
 	@for p in $$($(FIND) $< -name *.udeb); do \
-		echo $$($(BASENAME) $$p | cut -d '_' -f 1) >>$@; \
+		echo $$($(BASENAME) "$$p" | cut -d '_' -f 1) >>"$@"; \
 	done
 
 $(d-i_conf)/localudebs: udebs $(d-i_source)
 	@$(RM) $@/*.udeb
-	@for p in $$($(FIND) $< -name *.udeb); do \
-		$(CP) "$$p" $@/; \
+	@for p in $$($(FIND) $< -name '*.udeb'); do \
+		$(CP) "$$p" "$@/"; \
 	done
-	@$(TOUCH) $@
+	@$(TOUCH) "$@"
 
-udebs: src/udebs .FORCE
-	@$(MKDIR) $@
-	$(MAKE) -C $@ -f $</Makefile all \
-		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir)
+udebs.d: udebs.list
+	@echo "udebs = " >"$@"
+	@for p in $$(cat "$<"); do \
+		dsc=$${p#$(srcdir)/}; \
+		pkg=$${dsc##*/}; \
+		pkg=$${pkg%.*}; \
+		pkg_name=$${pkg%%_*}; \
+		pkg_version=$${pkg#*_}; \
+		pkg_version=$${pkg_version%-*}; \
+		udeb_src="udebs/$$pkg_name-$$pkg_version"; \
+		echo "udebs += $$udeb_src" >>$@; \
+		echo "$$udeb_src: $$dsc" >>$@; \
+	done
+
+udebs: $(udebs)
+	$(TOUCH) "$@"
+
+udebs/%:
+	$(MKDIR) udebs
+	$(DPKG_SRC) -x "$<" "$@"
+	cd "$@" && debuild
+
+udebs.list: .FORCE
+	@dsc_list=$$($(FIND) $(srcdir)/src/udebs -iname '*.dsc'); \
+	if printf "%s" "$$dsc_list" | cmp -s - "$@"; then \
+		for p in $$dsc_list; do \
+			if [ "$$p" -nt "$@" ]; then \
+				echo "newer"; \
+				$(TOUCH) "$@"; \
+				break; \
+			fi; \
+		done; \
+	else \
+		printf "%s" "$$dsc_list" >"$@"; \
+	fi
 
 $(d-i_source): $(d-i_dsc)
-	@$(DPKG_SRC) -x "$<" $@
+	@$(DPKG_SRC) -x "$<" "$@"
 
 $(d-i_dsc): .FORCE
 	@$(DEB_SRC) debian-installer=$(DI_VERSION)
 
-clean: all_clean
+clean: udebs_clean
+	-[ -d $(d-i_conf) ] && $(MAKE) -C $(d-i_conf) all_clean || true
 
-.PHONY: all_clean udebs_clean %_clean
-all_clean: udebs_clean
-	-@[ -d $(d-i_conf) ] && $(MAKE) -C $(d-i_conf) all_clean || true
+.PHONY: udebs_clean
+udebs_clean:
+	-$(RM) udebs/*
 
-udebs_clean: %_clean: src/%
-	-@[ -d $* ] && $(MAKE) -C $* -f $</Makefile clean \
-		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir)
-
-%_clean:
-	-@[ -d $(d-i_conf) ] && $(MAKE) -C $(d-i_conf) clean_$* || true
-
-distclean: udebs_distclean
-	-$(RM) $(d-i_source) $(d-i_dsc) $(d-i_tar)
-
-.PHONY: udebs_distclean
-udebs_distclean: %_distclean: src/%
-	-@[ -d $* ] && $(MAKE) -C $* -f $</Makefile distclean \
-		make_confdir=$(make_confdir) make_toolsdir=$(make_toolsdir)
-ifneq ($(CURDIR),$(srcdir))
-	-$(RM) $*
-endif
+distclean:
+	-$(RM) $(d-i_source) $(d-i_dsc) $(d-i_tar) udebs udebs.list udebs.d
