@@ -21,27 +21,6 @@ if(!$conf->isset('server', 'base'))
 {
 	error("server/base not configured");
 }
-echo "set base ". $conf->get('server', 'base') ."\n";
-
-session_start();
-
-echo "echo SERVER:\n";
-foreach($_SERVER as $key => $value)
-{
-	echo "echo ". $key ."=". $value ."\n";
-}
-
-echo "echo SESSION:\n";
-foreach($_SESSION as $key => $value)
-{
-	echo "echo ". $key ."=". $value ."\n";
-}
-
-echo "echo REQUEST:\n";
-foreach($_REQUEST as $key => $value)
-{
-	echo "echo ". $key ."=". $value ."\n";
-}
 
 function menu(
 	string $var, string $title = null, array $item_list=array(),
@@ -97,7 +76,25 @@ function menu_arch()
 	);
 }
 
-echo "set params \n";
+$boot_params = array(
+	'netcfg/disable_autoconfig' => 'true',
+	'netcfg/confirm_static' => 'true'
+);
+
+function boot_params($params)
+{
+	$result = '';
+	foreach($params as $key => $value)
+	{
+		if(!empty($result))
+		{
+			$result .= " ";
+		}
+		$result .= $key ."=". $value;
+	}
+	
+	return $result;
+}
 
 if($conf->isset('server', 'boot'))
 {
@@ -109,16 +106,23 @@ if($conf->isset('server', 'arch'))
 }
 if($conf->isset('apt', 'proxy'))
 {
-?>
-set params ${params} mirror/country=manual
-set params ${params} mirror/http/directory=/ftp.fr.debian.org/debian
-set params ${params} mirror/http/proxy=
-set params ${params} base-installer/includes=auto-apt-proxy
-<?php
-	echo "set params \${params} mirror/http/hostname=".
-		$conf->get('apt', 'proxy') ."\n";
+		$boot_params['mirror/country'] = 'manual';
+		$boot_params['mirror/http/hostname'] = $conf->get('apt', 'proxy');
+		$boot_params['mirror/http/directory'] = '/ftp.fr.debian.org/debian';
+		$boot_params['mirror/http/proxy'] = '';
+		$boot_params['base-installer/includes'] = 'auto-apt-proxy';
 }
+
+echo "set base ". $conf->get('server', 'base') ."\n";
+echo "set boot_params ". boot_params($boot_params) ."\n";
 ?>
+set boot_params ${boot_params} netcfg/get_ipaddress=${net0/ip}
+set boot_params ${boot_params} netcfg/get_netmask=${net0/netmask}
+set boot_params ${boot_params} netcfg/get_gateway=${net0/gateway}
+set boot_params ${boot_params} netcfg/get_nameservers=${net0/dns}
+isset ${net0/domain} && set boot_params ${boot_params} netcfg/get_domain=${net0/domain} ||
+isset ${hostname} && set boot_params ${boot_params} netcfg/get_hostname=${hostname} ||
+
 set menu_previous menu_boot_method
 
 isset ${boot_method} || goto ${menu_previous}
@@ -130,14 +134,14 @@ exit
 :boot_netboot
 isset ${arch} || goto menu_arch
 set netboot ${base}/netboot/${arch}
-kernel ${netboot}/linux initrd=rd.gz ${params}
+kernel ${netboot}/linux initrd=rd.gz ${boot_params}
 initrd --name rd.gz ${netboot}/initrd.gz
-show params
+show boot_params
 prompt Press any key to boot ${boot_method} || goto ${menu_previous}
 boot
 
 :boot_rescue
-set params ${params} rescue/enable=true
+set boot_params ${boot_params} rescue/enable=true
 goto boot_netboot
 
 <?php
