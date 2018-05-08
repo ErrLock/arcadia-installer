@@ -141,7 +141,7 @@ exit
 :boot_netboot
 isset ${arch} || goto menu_arch
 set netboot ${base}/netboot/${arch}
-kernel ${netboot}/linux initrd=rd.gz ${boot_params}
+kernel ${netboot}/linux initrd=rd.gz ${boot_params} || goto menu_arch
 initrd --name rd.gz ${netboot}/initrd.gz
 show boot_params
 prompt Press any key to boot ${boot_method} || goto ${menu_previous}
