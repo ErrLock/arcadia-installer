@@ -19,6 +19,7 @@ d-i_conf = $(d-i_source)/build
 web_sources = $(wildcard $(srcdir)/src/web/*)
 web_install_targets = netboot config.php $(notdir $(web_sources))
 web_install_targets := $(addprefix $(DESTDIR)$(datadir)/web/, $(web_install_targets))
+web_install_targets += $(DESTDIR)$(sysconfdir)/$(pkg_name).ini
 web_host := localhost:8888
 
 all: netboot
@@ -40,17 +41,21 @@ netboot_install: %_install: $(DESTDIR)$(datadir)/%
 web_test: DESTDIR = test
 web_test:
 	$(MAKE) -f $(MAKEFILE_LIST) web_install DESTDIR=$(DESTDIR)
-	$(INSTALL) -d $(DESTDIR)$(sysconfdir)
-	@conf="$(DESTDIR)$(sysconfdir)/$(pkg_name).ini"; \
-	echo "[server]" >$$conf; \
-	echo "salt = 'arcadia-installer.web_test'" >>$$conf; \
-	if [ -n "$(apt_proxy)" ]; then \
-		echo "[apt]" >>$$conf; \
-		echo "proxy = '$(apt_proxy)'" >>$$conf; \
-	fi
+ifdef preseed
+	[ -f "$(preseed)" ]
+	$(INSTALL) "$(preseed)" $(DESTDIR)$(sysconfdir)/preseed.ini
+endif
 	save_traps=$$(trap); \
 	trap '$(RM) $(DESTDIR); eval "$$save_traps"' INT; \
 	php -S $(web_host) -t $(DESTDIR)$(datadir)/web
+
+$(DESTDIR)$(sysconfdir):
+	$(INSTALL) -d "$@";
+
+.PHONY: $(DESTDIR)$(sysconfdir)/$(pkg_name).ini
+$(DESTDIR)$(sysconfdir)/$(pkg_name).ini: $(DESTDIR)$(sysconfdir)
+	echo "[server]" >"$@"; \
+	echo "salt = 'arcadia-installer'" >>"$@"; \
 
 .PHONY: $(DESTDIR)$(datadir)/netboot
 $(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer

@@ -5,6 +5,7 @@ build/
 
 # test install
 dest/
+web_test_preseed.ini
 
 # extracted udebs
 src/udebs/*/*/

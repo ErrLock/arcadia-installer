@@ -11,7 +11,7 @@ $conf = new DB($conf_file);
 
 if(!$conf->isset('server', 'salt'))
 {
-	exit;
+	throw new \Error("salt not set");
 }
 
 $preseed_file = $sysconfdir ."/".
@@ -28,25 +28,6 @@ $preseed_db = new DB($preseed_file);
 
 require_once('./preseed.class.php');
 $preseed = new Preseed($preseed_db);
-
-if(!$preseed->isset('mirror/http/hostname') && $conf->isset('apt', 'proxy'))
-{
-		$preseed->set('mirror/country', 'manual');
-		$preseed->set('mirror/http/hostname', $conf->get('apt', 'proxy'));
-		$preseed->set('mirror/http/directory', '/ftp.debian.org/debian');
-		$preseed->set('mirror/http/proxy', '');
-		$preseed->set('base-installer/includes', 'auto-apt-proxy');
-}
-
-if(!$preseed->isset('netcfg/get_hostname'))
-{
-	$hostname = 'arcadia';
-	if($conf->isset('server', 'default_hostname'))
-	{
-		$hostname = $conf->get('server', 'default_hostname');
-	}
-	$preseed->set('netcfg/get_hostname', $hostname);
-}
 
 echo $preseed;
 ?>
