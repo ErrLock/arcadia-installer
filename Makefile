@@ -41,6 +41,10 @@ netboot_install: %_install: $(DESTDIR)$(datadir)/%
 web_test: DESTDIR = test
 web_test:
 	$(MAKE) -f $(MAKEFILE_LIST) web_install DESTDIR=$(DESTDIR)
+ifdef conf
+	[ -f "$(conf)" ]
+	$(INSTALL) "$(conf)" $(DESTDIR)$(sysconfdir)/$(pkg_name).ini
+endif
 ifdef preseed
 	[ -f "$(preseed)" ]
 	$(INSTALL) "$(preseed)" $(DESTDIR)$(sysconfdir)/preseed.ini

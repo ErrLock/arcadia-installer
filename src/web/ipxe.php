@@ -100,6 +100,13 @@ if($conf->isset('server', 'arch'))
 {
 	echo "set arch ". $conf->get('server', 'arch') ."\n";
 }
+if(
+	$conf->isset('server', 'confirm_boot')
+	&& $conf->get('server', 'confirm_boot') == 'true'
+)
+{
+	echo "set confirm_boot 1\n";
+}
 
 echo "set boot_params ". boot_params($boot_params) ."\n";
 ?>
@@ -119,6 +126,7 @@ isset ${arch} || iseq ${buildarch} i386 && set arch i386 ||
 isset ${arch} && iseq ${arch} i386 && cpuid --ext 29 && set arch amd64 ||
 
 isset ${boot_method} || goto ${menu_previous}
+goto ${boot_method}
 
 :boot_default
 exit
@@ -131,7 +139,7 @@ kernel ${netboot}/linux initrd=rd.gz initrd=preseed ${boot_params} || goto menu_
 initrd --name rd.gz ${netboot}/initrd.gz
 initrd --name preseed preseed.php preseed.cfg
 show boot_params
-prompt Press any key to boot ${boot_method} || goto ${menu_previous}
+isset ${confirm_boot} || prompt Press any key to boot ${boot_method} || goto ${menu_previous}
 boot
 
 :boot_rescue
