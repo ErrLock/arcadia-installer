@@ -126,6 +126,12 @@ isset ${hostname} && set boot_params ${boot_params} netcfg/get_hostname=${hostna
 
 set menu_previous menu_boot_method
 
+iseq ${buildarch} arm32 && set arch armel ||
+isset ${arch} || iseq ${buildarch} arm64 && set arch arm64 ||
+isset ${arch} || iseq ${buildarch} x86_64 && set arch amd64 ||
+isset ${arch} || iseq ${buildarch} i386 && set arch i386 ||
+isset ${arch} && iseq ${arch} i386 && cpuid --ext 29 && set arch amd64 ||
+
 isset ${boot_method} || goto ${menu_previous}
 
 :boot_default
