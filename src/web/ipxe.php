@@ -9,7 +9,7 @@ function error(string $message)
 	exit;
 }
 
-$conf_file = $sysconfdir ."/arcadia-installer.ini";
+$conf_file = ARCADIA_SYSCONFDIR ."/arcadia-installer.ini";
 if(!file_exists($conf_file)) {
 	error("Not found: ". $conf_file);
 }

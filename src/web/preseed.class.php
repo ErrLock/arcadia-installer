@@ -9,9 +9,7 @@ class Preseed
 	
 	public function __construct(DB $client_db)
 	{
-		global $sysconfdir;
-		
-		$default_file = $sysconfdir ."/preseed.ini";
+		$default_file = ARCADIA_SYSCONFDIR ."/preseed.ini";
 		if(is_file($default_file)) {
 			$this->default_db = new DB($default_file);
 		}

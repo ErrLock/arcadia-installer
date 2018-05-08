@@ -70,11 +70,11 @@ $(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer
 
 .PHONY: $(DESTDIR)$(datadir)/web/config.php
 $(DESTDIR)$(datadir)/web/config.php: $(DESTDIR)$(datadir)/web
-	@echo '<?php' >$@; \
-	echo '$$prefix = "$(DESTDIR)$(prefix)";' >>$@; \
-	echo '$$datarootdir = $$prefix ."/share";' >>$@; \
-	echo '$$datadir = $$datarootdir ."/$(pkg_name)";' >>$@; \
-	echo '$$sysconfdir = $$prefix ."/etc";' >>$@; \
+	echo '<?php' >$@; \
+	echo 'define('\''ARCADIA_PREFIX'\'', "$(DESTDIR)$(prefix)");' >>$@; \
+	echo 'define('\''ARCADIA_DATAROOTDIR'\'', ARCADIA_PREFIX ."/share");' >>$@; \
+	echo 'define('\''ARCADIA_DATADIR'\'', ARCADIA_DATAROOTDIR ."/$(pkg_name)");' >>$@; \
+	echo 'define('\''ARCADIA_SYSCONFDIR'\'', ARCADIA_PREFIX ."/etc");' >>$@; \
 	echo '?>' >>$@
 
 

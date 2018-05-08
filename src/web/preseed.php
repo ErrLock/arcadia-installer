@@ -1,7 +1,7 @@
 <?php
 require_once('./config.php');
 
-$conf_file = $sysconfdir ."/arcadia-installer.ini";
+$conf_file = ARCADIA_SYSCONFDIR ."/arcadia-installer.ini";
 if(!file_exists($conf_file)) {
 	throw new \Error("Not found: ". $conf_file);
 }
@@ -14,7 +14,7 @@ if(!$conf->isset('server', 'salt'))
 	throw new \Error("salt not set");
 }
 
-$preseed_file = $sysconfdir ."/".
+$preseed_file = ARCADIA_SYSCONFDIR ."/".
 	crypt(
 		$_SERVER['REMOTE_ADDR'],
 		'$6$rounds=5000$'. $conf->get('server', 'salt') .'$'
