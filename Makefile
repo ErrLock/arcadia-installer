@@ -43,7 +43,7 @@ web_test:
 	$(INSTALL) -d $(DESTDIR)$(sysconfdir)
 	@conf="$(DESTDIR)$(sysconfdir)/$(pkg_name).ini"; \
 	echo "[server]" >$$conf; \
-	echo "base = 'http://$(web_host)'" >>$$conf; \
+	echo "salt = 'arcadia-installer.web_test'" >>$$conf; \
 	if [ -n "$(apt_proxy)" ]; then \
 		echo "[apt]" >>$$conf; \
 		echo "proxy = '$(apt_proxy)'" >>$$conf; \
@@ -65,12 +65,12 @@ $(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer
 
 .PHONY: $(DESTDIR)$(datadir)/web/config.php
 $(DESTDIR)$(datadir)/web/config.php: $(DESTDIR)$(datadir)/web
-	@echo '<?php' >$@
-	@echo '$$prefix = "$(DESTDIR)$(prefix)";' >>$@
-	@echo '$$datarootdir = $$prefix ."/share";' >>$@
-	@echo '$$datadir = $$datarootdir ."/$(pkg_name)";' >>$@
-	@echo '$$sysconfdir = $$prefix ."/etc";' >>$@
-	@echo '?>' >>$@
+	@echo '<?php' >$@; \
+	echo '$$prefix = "$(DESTDIR)$(prefix)";' >>$@; \
+	echo '$$datarootdir = $$prefix ."/share";' >>$@; \
+	echo '$$datadir = $$datarootdir ."/$(pkg_name)";' >>$@; \
+	echo '$$sysconfdir = $$prefix ."/etc";' >>$@; \
+	echo '?>' >>$@
 
 
 .PHONY: $(DESTDIR)$(datadir)/web/netboot

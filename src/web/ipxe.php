@@ -17,11 +17,6 @@ if(!file_exists($conf_file)) {
 require_once('./db.class.php');
 $conf = new DB($conf_file);
 
-if(!$conf->isset('server', 'base'))
-{
-	error("server/base not configured");
-}
-
 function menu(
 	string $var, string $title = null, array $item_list=array(),
 	string $goto=null
@@ -105,16 +100,7 @@ if($conf->isset('server', 'arch'))
 {
 	echo "set arch ". $conf->get('server', 'arch') ."\n";
 }
-if($conf->isset('apt', 'proxy'))
-{
-		$boot_params['mirror/country'] = 'manual';
-		$boot_params['mirror/http/hostname'] = $conf->get('apt', 'proxy');
-		$boot_params['mirror/http/directory'] = '/ftp.fr.debian.org/debian';
-		$boot_params['mirror/http/proxy'] = '';
-		$boot_params['base-installer/includes'] = 'auto-apt-proxy';
-}
 
-echo "set base ". $conf->get('server', 'base') ."\n";
 echo "set boot_params ". boot_params($boot_params) ."\n";
 ?>
 set boot_params ${boot_params} netcfg/get_ipaddress=${net0/ip}
@@ -140,9 +126,10 @@ exit
 :boot_install
 :boot_netboot
 isset ${arch} || goto menu_arch
-set netboot ${base}/netboot/${arch}
-kernel ${netboot}/linux initrd=rd.gz ${boot_params} || goto menu_arch
+set netboot netboot/${arch}
+kernel ${netboot}/linux initrd=rd.gz initrd=preseed ${boot_params} || goto menu_arch
 initrd --name rd.gz ${netboot}/initrd.gz
+initrd --name preseed preseed.php preseed.cfg
 show boot_params
 prompt Press any key to boot ${boot_method} || goto ${menu_previous}
 boot
