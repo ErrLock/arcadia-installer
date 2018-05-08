@@ -59,7 +59,8 @@ function menu_boot_method()
 		array(
 			'boot_install' => "Install",
 			'boot_rescue' => "Rescue",
-			'boot_default' => "Default"
+			'boot_default' => "Default",
+			'boot_shell' => "iPXE shell"
 		)
 	);
 }
@@ -143,6 +144,9 @@ boot
 :boot_rescue
 set boot_params ${boot_params} rescue/enable=true
 goto boot_netboot
+
+:boot_shell
+shell
 
 <?php
 	menu_boot_method();
