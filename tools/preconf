@@ -1,0 +1,56 @@
+#!/usr/bin/env php
+<?php
+$preconf_webroot = $_SERVER['argv'][1];
+$preconf_target = $_SERVER['argv'][2];
+$preconf_ini_path = $_SERVER['argv'][3];
+$preconf_ini = array();
+
+require_once($preconf_webroot .'/config.php');
+
+switch($preconf_target)
+{
+	case 'config':
+		$preconf_ini = parse_ini_file($preconf_ini_path);
+		if(isset($preconf_ini['database']))
+		{
+			echo 'write database = \''. $preconf_ini['database'] .'\'\n'.
+			' to '. ARCADIA_SYSCONFDIR ."/". ARCADIA_PKGNAME .".ini";
+			//~ $ch = fopen(ARCADIA_SYSCONFDIR ."/". ARCADIA_PKGNAME .".ini", 'w');
+			//~ fwrite($ch, 'database = \''. $preconf_ini['database'] .'\'\n');
+			//~ fclose($ch);
+			unset($preconf_ini['database']);
+		}
+		break;
+}
+
+require_once('bootstrap.php');
+
+switch($preconf_target)
+{
+	case 'config':
+		foreach($preconf_ini as $key => $value)
+		{
+			$conf->set($key, $value);
+		}
+		break;
+	case 'preseed':
+		require_once('preseed.class.php');
+		$preseed = new Preseed($db);
+		$preconf_ini = parse_ini_file($preconf_ini_path, true);
+		foreach($preconf_ini as $key => $settings)
+		{
+			if(!isset($settings['default']))
+			{
+				continue;
+			}
+			isset($settings['package']) || $settings['package'] = 'd-i';
+			isset($settings['type']) || $settings['type'] = 'string';
+			
+			$preseed->create(
+				$key, $settings['default'], $settings['type'],
+				$settings['package']
+			);
+		}
+		break;
+}
+?>

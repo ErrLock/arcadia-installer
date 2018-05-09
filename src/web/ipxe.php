@@ -1,6 +1,6 @@
 #!ipxe
 <?php
-require_once('./config.php');
+require_once(__DIR__ .'/bootstrap.php');
 
 function error(string $message)
 {
@@ -8,14 +8,6 @@ function error(string $message)
 	echo "exit\n";
 	exit;
 }
-
-$conf_file = ARCADIA_SYSCONFDIR ."/arcadia-installer.ini";
-if(!file_exists($conf_file)) {
-	error("Not found: ". $conf_file);
-}
-
-require_once('./db.class.php');
-$conf = new DB($conf_file);
 
 function menu(
 	string $var, string $title = null, array $item_list=array(),
@@ -92,17 +84,17 @@ function boot_params($params)
 	return $result;
 }
 
-if($conf->isset('server', 'boot'))
+if($conf->isset('boot_method'))
 {
-	echo "set boot_method ". $conf->get('server', 'boot') ."\n";
+	echo "set boot_method ". $conf->get('boot_method') ."\n";
 }
-if($conf->isset('server', 'arch'))
+if($conf->isset('arch'))
 {
-	echo "set arch ". $conf->get('server', 'arch') ."\n";
+	echo "set arch ". $conf->get('arch') ."\n";
 }
 if(
-	$conf->isset('server', 'confirm_boot')
-	&& $conf->get('server', 'confirm_boot') == 'true'
+	$conf->isset('confirm_boot')
+	&& $conf->get('confirm_boot') == 'true'
 )
 {
 	echo "set confirm_boot 1\n";
@@ -137,7 +129,7 @@ isset ${arch} || goto menu_arch
 set netboot netboot/${arch}
 kernel ${netboot}/linux initrd=rd.gz initrd=preseed ${boot_params} || goto menu_arch
 initrd --name rd.gz ${netboot}/initrd.gz
-initrd --name preseed preseed.php preseed.cfg
+initrd --name preseed preseed.php?uuid=${uuid} preseed.cfg
 show boot_params
 isset ${confirm_boot} || prompt Press any key to boot ${boot_method} || goto ${menu_previous}
 boot

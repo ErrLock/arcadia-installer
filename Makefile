@@ -17,9 +17,9 @@ d-i_tar = debian-installer_$(DI_VERSION).tar.gz
 d-i_conf = $(d-i_source)/build
 
 web_sources = $(wildcard $(srcdir)/src/web/*)
-web_install_targets = netboot config.php $(notdir $(web_sources))
+web_install_targets = netboot
+web_install_targets += config.php $(notdir $(web_sources))
 web_install_targets := $(addprefix $(DESTDIR)$(datadir)/web/, $(web_install_targets))
-web_install_targets += $(DESTDIR)$(sysconfdir)/$(pkg_name).ini
 web_host := localhost:8888
 
 all: netboot
@@ -33,21 +33,24 @@ install: netboot_install web_install
 
 .PHONY: web_install
 web_install: $(web_install_targets)
+	$(INSTALL) -d $(DESTDIR)$(sharedstatedir)
 
 .PHONY: netboot_install
 netboot_install: %_install: $(DESTDIR)$(datadir)/%
 
 .PHONY: web_test
 web_test: DESTDIR = test
-web_test:
+web_test: tools/preconf
 	$(MAKE) -f $(MAKEFILE_LIST) web_install DESTDIR=$(DESTDIR)
 ifdef conf
 	[ -f "$(conf)" ]
-	$(INSTALL) "$(conf)" $(DESTDIR)$(sysconfdir)/$(pkg_name).ini
+	$< "$(DESTDIR)$(datadir)/web" \
+		'config' "$(conf)"
 endif
 ifdef preseed
 	[ -f "$(preseed)" ]
-	$(INSTALL) "$(preseed)" $(DESTDIR)$(sysconfdir)/preseed.ini
+	$< "$(DESTDIR)$(datadir)/web" \
+		'preseed' "$(preseed)"
 endif
 	save_traps=$$(trap); \
 	trap '$(RM) $(DESTDIR); eval "$$save_traps"' INT; \
@@ -75,10 +78,10 @@ $(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer
 .PHONY: $(DESTDIR)$(datadir)/web/config.php
 $(DESTDIR)$(datadir)/web/config.php: $(DESTDIR)$(datadir)/web
 	echo '<?php' >$@; \
-	echo 'define('\''ARCADIA_PREFIX'\'', "$(DESTDIR)$(prefix)");' >>$@; \
-	echo 'define('\''ARCADIA_DATAROOTDIR'\'', ARCADIA_PREFIX ."/share");' >>$@; \
-	echo 'define('\''ARCADIA_DATADIR'\'', ARCADIA_DATAROOTDIR ."/$(pkg_name)");' >>$@; \
-	echo 'define('\''ARCADIA_SYSCONFDIR'\'', ARCADIA_PREFIX ."/etc");' >>$@; \
+	echo 'define('\''ARCADIA_PKGNAME'\'', "$(pkg_name)");' >>$@; \
+	echo 'define('\''ARCADIA_SYSCONFDIR'\'', "$(DESTDIR)$(sysconfdir)");' >>$@; \
+	echo 'define('\''ARCADIA_SHAREDSTATEDIR'\'', "$(DESTDIR)$(sharedstatedir)");' >>$@; \
+	echo 'set_include_path(__DIR__ . PATH_SEPARATOR . get_include_path());' >>$@; \
 	echo '?>' >>$@
 
 

@@ -1,33 +1,11 @@
 <?php
-require_once('./config.php');
+require_once(__DIR__ .'/bootstrap.php');
 
-$conf_file = ARCADIA_SYSCONFDIR ."/arcadia-installer.ini";
-if(!file_exists($conf_file)) {
-	throw new \Error("Not found: ". $conf_file);
-}
+$uuid = null;
+isset($_REQUEST['uuid']) && $uuid = $_REQUEST['uuid'];
 
-require_once('./db.class.php');
-$conf = new DB($conf_file);
-
-if(!$conf->isset('server', 'salt'))
-{
-	throw new \Error("salt not set");
-}
-
-$preseed_file = ARCADIA_SYSCONFDIR ."/".
-	crypt(
-		$_SERVER['REMOTE_ADDR'],
-		'$6$rounds=5000$'. $conf->get('server', 'salt') .'$'
-	) .
-	'.ini';
-if(!is_file($preseed_file))
-{
-	touch($preseed_file);
-}
-$preseed_db = new DB($preseed_file);
-
-require_once('./preseed.class.php');
-$preseed = new Preseed($preseed_db);
+require_once('preseed.class.php');
+$preseed = new Preseed($db, $uuid);
 
 echo $preseed;
 ?>
