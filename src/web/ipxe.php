@@ -64,6 +64,20 @@ function menu_arch()
 	);
 }
 
+function menu_frontend()
+{
+	menu(
+		'frontend',
+		"Select frontend",
+		array(
+			'newt' => 'Newt',
+			'text' => 'Text',
+			'default' => 'Default'
+		),
+		'boot_netboot'
+	);
+}
+
 $boot_params = array(
 	'netcfg/disable_autoconfig' => 'true',
 	'netcfg/confirm_static' => 'true'
@@ -99,6 +113,10 @@ if(
 {
 	echo "set confirm_boot 1\n";
 }
+if($conf->isset('frontend'))
+{
+	echo "set frontend ". $conf->get('frontend') ."\n";
+}
 
 echo "set boot_params ". boot_params($boot_params) ."\n";
 ?>
@@ -126,6 +144,8 @@ exit
 :boot_install
 :boot_netboot
 isset ${arch} || goto menu_arch
+isset ${frontend} || goto menu_frontend
+iseq ${frontend} default || set boot_params ${boot_params} DEBIAN_FRONTEND=${frontend}
 set netboot netboot/${arch}
 kernel ${netboot}/linux initrd=rd.gz initrd=preseed ${boot_params} || goto menu_arch
 initrd --name rd.gz ${netboot}/initrd.gz
@@ -144,4 +164,5 @@ shell
 <?php
 	menu_boot_method();
 	menu_arch();
+	menu_frontend();
 ?>
