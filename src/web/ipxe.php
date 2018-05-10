@@ -60,7 +60,7 @@ function menu_arch()
 		'arch',
 		"Select architecture",
 		$items,
-		'boot_netboot'
+		'select_frontend'
 	);
 }
 
@@ -74,7 +74,7 @@ function menu_frontend()
 			'text' => 'Text',
 			'default' => 'Default'
 		),
-		'boot_netboot'
+		'do_netboot'
 	);
 }
 
@@ -141,22 +141,26 @@ goto ${boot_method}
 :boot_default
 exit
 
+:boot_rescue
+set boot_params ${boot_params} rescue/enable=true
+
 :boot_install
 :boot_netboot
+:select_arch
 isset ${arch} || goto menu_arch
+
+:select_frontend
 isset ${frontend} || goto menu_frontend
-iseq ${frontend} default || set boot_params ${boot_params} DEBIAN_FRONTEND=${frontend}
+
+:do_netboot
 set netboot netboot/${arch}
+iseq ${frontend} default || set boot_params ${boot_params} DEBIAN_FRONTEND=${frontend}
 kernel ${netboot}/linux initrd=rd.gz initrd=preseed ${boot_params} || goto menu_arch
 initrd --name rd.gz ${netboot}/initrd.gz
 initrd --name preseed preseed.php?uuid=${uuid} preseed.cfg
 show boot_params
 isset ${confirm_boot} || prompt Press any key to boot ${boot_method} || goto ${menu_previous}
 boot
-
-:boot_rescue
-set boot_params ${boot_params} rescue/enable=true
-goto boot_netboot
 
 :boot_shell
 shell
