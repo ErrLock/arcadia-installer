@@ -74,8 +74,29 @@ function menu_frontend()
 			'text' => 'Text',
 			'default' => 'Default'
 		),
-		'do_netboot'
+		'select_report'
 	);
+}
+
+function menu_report()
+{
+	menu(
+		'report',
+		"Report installation progress to a URL?",
+		array(
+			'true' => "Yes",
+			'false' => "No"
+		),
+		'select_report_url'
+	);
+}
+
+function menu_report_url()
+{
+	echo ":menu_report_url\n";
+	echo "echo -n Report URL: \${}\n";
+	echo "read report_url:string || goto ${menu_previous}\n";
+	echo "goto do_netboot\n";
 }
 
 $boot_params = array(
@@ -106,12 +127,9 @@ if($conf->isset('arch'))
 {
 	echo "set arch ". $conf->get('arch') ."\n";
 }
-if(
-	$conf->isset('confirm_boot')
-	&& $conf->get('confirm_boot') == 'true'
-)
+if($conf->isset('confirm_boot'))
 {
-	echo "set confirm_boot 1\n";
+	echo "set confirm_boot ". $conf->get('confirm_boot') ."\n";
 }
 if($conf->isset('frontend'))
 {
@@ -129,11 +147,18 @@ isset ${hostname} && set boot_params ${boot_params} netcfg/get_hostname=${hostna
 
 set menu_previous menu_boot_method
 
-iseq ${buildarch} arm32 && set arch armel ||
-isset ${arch} || iseq ${buildarch} arm64 && set arch arm64 ||
-isset ${arch} || iseq ${buildarch} x86_64 && set arch amd64 ||
-isset ${arch} || iseq ${buildarch} i386 && set arch i386 ||
-isset ${arch} && iseq ${arch} i386 && cpuid --ext 29 && set arch amd64 ||
+# isset ${arch} || iseq ${buildarch} foo && set arch bar
+# would set arch to bar when arch is set: (a || b) && c
+# there doesn't seem to be a way to set precedence, so use goto
+isset ${arch} && goto init_arch_set ||
+iseq ${buildarch} arm32 && set arch armel && goto init_arch_set ||
+iseq ${buildarch} arm64 && set arch arm64 && goto init_arch_set ||
+iseq ${buildarch} x86_64 && set arch amd64 && goto init_arch_set ||
+iseq ${buildarch} i386 && cpuid --ext 29 && set arch amd64 && goto init_arch_set ||
+iseq ${buildarch} i386 && set arch i386 && goto init_arch_set ||
+:init_arch_set
+
+isset ${confirm_boot} || set confirm_boot false
 
 isset ${boot_method} || goto ${menu_previous}
 goto ${boot_method}
@@ -152,14 +177,24 @@ isset ${arch} || goto menu_arch
 :select_frontend
 isset ${frontend} || goto menu_frontend
 
+:select_report
+isset ${report} || goto menu_report
+
+:select_report_url
+iseq ${report} true || goto do_netboot
+isset ${report_url} || goto menu_report_url
+
 :do_netboot
 set netboot netboot/${arch}
+iseq ${report} true && set boot_params ${boot_params} debconf/report_url=${report_url} ||
+iseq ${report} true && set boot_params ${boot_params} debconf/report_frontend=${frontend} ||
+iseq ${report} true && set frontend report ||
 iseq ${frontend} default || set boot_params ${boot_params} DEBIAN_FRONTEND=${frontend}
 kernel ${netboot}/linux initrd=rd.gz initrd=preseed ${boot_params} || goto menu_arch
 initrd --name rd.gz ${netboot}/initrd.gz
 initrd --name preseed preseed.php?uuid=${uuid} preseed.cfg
 show boot_params
-isset ${confirm_boot} || prompt Press any key to boot ${boot_method} || goto ${menu_previous}
+iseq ${confirm_boot} true || prompt Press any key to boot ${boot_method} || goto ${menu_previous}
 boot
 
 :boot_shell
@@ -169,4 +204,6 @@ shell
 	menu_boot_method();
 	menu_arch();
 	menu_frontend();
+	menu_report();
+	menu_report_url();
 ?>
