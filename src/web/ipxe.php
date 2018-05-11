@@ -2,208 +2,199 @@
 <?php
 require_once(__DIR__ .'/bootstrap.php');
 
-function error(string $message)
+foreach($conf->get_all() as $setting)
 {
-	echo "echo [ERROR] ". $message ."\n";
-	echo "exit\n";
-	exit;
+	if($setting['key'] != 'auto')
+	{
+		$setting['key'] = 'default_'. $setting['key'];
+	}
+	echo "set ". $setting['key'] ." ". $setting['value'] ."\n";
 }
 
-function menu(
-	string $var, string $title = null, array $item_list=array(),
-	string $goto=null
-)
+function menu(string $id, string $title = null, array $item_list=array())
 {
-	$id = "menu_". $var;
 	if(!isset($title))
 	{
-		$title = "Select ". $var;
+		$title = "Select ". $id;
 	}
+	$id = "menu_". $id;
 	
-	echo ":". $id ."\n";
-	echo "menu ". $title ."\n";
+	echo "menu --name ". $id ." ". $title ."\n";
 	foreach($item_list as $key => $value)
 	{
-		echo "item ". $key ." ". $value ."\n";
-	}
-	echo "choose ". $var ." || goto \${menu_previous}\n";
-	echo "set menu_previous ". $id ."\n";
-	if(isset($goto))
-	{
-		echo "goto ". $goto ."\n";
-	}
-	else
-	{
-		echo "goto \${". $var ."}\n";
+		echo "item --menu ". $id ." ". $key ." ". $value ."\n";
 	}
 }
 
-function menu_boot_method()
-{
-	menu(
-		'boot_method',
-		"Select boot method",
-		array(
-			'boot_install' => "Install",
-			'boot_rescue' => "Rescue",
-			'boot_default' => "Default",
-			'boot_shell' => "iPXE shell"
-		)
-	);
-}
-
-function menu_arch()
-{
-	$archs = array_map('basename', glob('netboot/*', GLOB_ONLYDIR));
-	$items = array_combine($archs, $archs);
-	menu(
-		'arch',
-		"Select architecture",
-		$items,
-		'select_frontend'
-	);
-}
-
-function menu_frontend()
-{
-	menu(
-		'frontend',
-		"Select frontend",
-		array(
-			'newt' => 'Newt',
-			'text' => 'Text',
-			'default' => 'Default'
-		),
-		'select_report'
-	);
-}
-
-function menu_report()
-{
-	menu(
-		'report',
-		"Report installation progress to a URL?",
-		array(
-			'true' => "Yes",
-			'false' => "No"
-		),
-		'select_report_url'
-	);
-}
-
-function menu_report_url()
-{
-	echo ":menu_report_url\n";
-	echo "echo -n Report URL: \${}\n";
-	echo "read report_url:string || goto ${menu_previous}\n";
-	echo "goto do_netboot\n";
-}
-
-$boot_params = array(
-	'netcfg/disable_autoconfig' => 'true',
-	'netcfg/confirm_static' => 'true'
-);
-
-function boot_params($params)
-{
-	$result = '';
-	foreach($params as $key => $value)
-	{
-		if(!empty($result))
-		{
-			$result .= " ";
-		}
-		$result .= $key ."=". $value;
-	}
-	
-	return $result;
-}
-
-if($conf->isset('boot_method'))
-{
-	echo "set boot_method ". $conf->get('boot_method') ."\n";
-}
-if($conf->isset('arch'))
-{
-	echo "set arch ". $conf->get('arch') ."\n";
-}
-if($conf->isset('confirm_boot'))
-{
-	echo "set confirm_boot ". $conf->get('confirm_boot') ."\n";
-}
-if($conf->isset('frontend'))
-{
-	echo "set frontend ". $conf->get('frontend') ."\n";
-}
-
-echo "set boot_params ". boot_params($boot_params) ."\n";
+menu('boot_method', "Select boot method", array(
+	'install' => "Install",
+	'rescue' => "Rescue",
+	'bios' => "Normal",
+	'shell' => "iPXE shell"
+));
+menu('report', "Report installation progress to remote URL?", array(
+	'true' => "Yes",
+	'false' => "No"
+));
+menu('arch', "Select architecture", array(
+	'x86_64' => 'PC (64 bits)',
+	'i386' => 'PC (32 bits)',
+	'arm64' => 'ARM (64 bits)',
+	'arm32' => 'ARM (32 bits)'
+));
+menu('frontend', "Select frontend", array(
+	'newt' => 'Newt',
+	'text' => 'Text',
+	'default' => 'Default'
+));
+menu('boot_failed', "!!!! BOOT FAILED !!!!", array('dummy' => "OK"));
 ?>
-set boot_params ${boot_params} netcfg/get_ipaddress=${net0/ip}
-set boot_params ${boot_params} netcfg/get_netmask=${net0/netmask}
-set boot_params ${boot_params} netcfg/get_gateway=${net0/gateway}
-set boot_params ${boot_params} netcfg/get_nameservers=${net0/dns}
-isset ${net0/domain} && set boot_params ${boot_params} netcfg/get_domain=${net0/domain} ||
-isset ${hostname} && set boot_params ${boot_params} netcfg/get_hostname=${hostname} ||
-
-set menu_previous menu_boot_method
-
-# isset ${arch} || iseq ${buildarch} foo && set arch bar
-# would set arch to bar when arch is set: (a || b) && c
+# Set defaults
+isset ${default_boot_method} || set default_boot_method bios
+isset ${default_boot_params} || set default_boot_params ${}
+isset ${default_report} || set default_report true
+isset ${default_report_url} || set default_report_url ${}
+isset ${default_arch} && goto default_arch_set ||
+# isset ${default_arch} || iseq ${buildarch} foo && set default_arch bar
+# would set default_arch to bar when default_arch is set: (a || b) && c
 # there doesn't seem to be a way to set precedence, so use goto
-isset ${arch} && goto init_arch_set ||
-iseq ${buildarch} arm32 && set arch armel && goto init_arch_set ||
-iseq ${buildarch} arm64 && set arch arm64 && goto init_arch_set ||
-iseq ${buildarch} x86_64 && set arch amd64 && goto init_arch_set ||
-iseq ${buildarch} i386 && cpuid --ext 29 && set arch amd64 && goto init_arch_set ||
-iseq ${buildarch} i386 && set arch i386 && goto init_arch_set ||
-:init_arch_set
+iseq ${buildarch} i386 && cpuid --ext 29 && set default_arch x86_64 && goto default_arch_set ||
+set default_arch ${buildarch}
+:default_arch_set
+isset ${default_frontend} || set default_frontend default
 
-isset ${confirm_boot} || set confirm_boot false
+:init
+# reset boot params
+set installer_boot_params ${}
+set installer_boot_params ${installer_boot_params} netcfg/disable_autoconfig=true
+set installer_boot_params ${installer_boot_params} netcfg/confirm_static=true
+set installer_boot_params ${installer_boot_params} netcfg/get_ipaddress=${net0/ip}
+set installer_boot_params ${installer_boot_params} netcfg/get_netmask=${net0/netmask}
+set installer_boot_params ${installer_boot_params} netcfg/get_gateway=${net0/gateway}
+set installer_boot_params ${installer_boot_params} netcfg/get_nameservers=${net0/dns}
+isset ${net0/domain} && set installer_boot_params ${installer_boot_params} netcfg/get_domain=${net0/domain} ||
+isset ${hostname} && set installer_boot_params ${installer_boot_params} netcfg/get_hostname=${hostname} ||
 
-isset ${boot_method} || goto ${menu_previous}
+iseq ${auto} true || goto init_auto_false
+set boot_method ${default_boot_method}
+set boot_params ${default_boot_params}
+set report ${default_report}
+set report_url ${default_report_url}
+set arch ${default_arch}
+set frontend ${default_frontend}
 goto ${boot_method}
 
-:boot_default
+:init_auto_false
+
+
+
+
+:select_boot_method
+isset ${boot_method} || choose --menu menu_boot_method --default ${default_boot_method} --keep boot_method || goto boot_reset
+goto ${boot_method}
+
+
+
+
+:bios
 exit
 
-:boot_rescue
-set boot_params ${boot_params} rescue/enable=true
 
-:boot_install
-:boot_netboot
-:select_arch
-isset ${arch} || goto menu_arch
 
-:select_frontend
-isset ${frontend} || goto menu_frontend
+
+:rescue
+set installer_boot_params ${installer_boot_params} rescue/enable=true
+goto netboot
+
+
+
+
+:install
 
 :select_report
-isset ${report} || goto menu_report
+isset ${report} || choose --menu menu_report --default ${default_report} --keep report || goto boot_reset
+iseq ${report} true || goto select_report_no
+set report_url ${default_report_url}
+echo -n Report URL: ${}
+read report_url:string || goto boot_reset
+set installer_boot_params ${installer_boot_params} debconf/report_url=${report_url}
+set installer_boot_params ${installer_boot_params} DEBIAN_FRONTEND=report
+:select_report_no
 
-:select_report_url
-iseq ${report} true || goto do_netboot
-isset ${report_url} || goto menu_report_url
+
+
+
+:netboot
+
+:select_arch
+isset ${arch} || choose --menu menu_arch --default ${default_arch} --keep arch || goto boot_reset
+
+:select_frontend
+isset ${frontend} || choose --menu menu_frontend --default ${default_frontend} --keep frontend || goto boot_reset
+iseq ${frontend} default && goto select_frontend_set ||
+iseq ${boot_method} install && iseq ${report} true && set installer_boot_params ${installer_boot_params} debconf/report_frontend=${frontend} && goto select_frontend_set ||
+set installer_boot_params ${installer_boot_params} DEBIAN_FRONTEND=${frontend}
+:select_frontend_set
+
+:select_boot_params
+iseq ${auto} true && goto select_boot_params_set ||
+show installer_boot_params
+set boot_params ${default_boot_params}
+echo -n Boot parameters: ${}
+read boot_params:string || goto boot_reset
+:select_boot_params_set
+
+
+
 
 :do_netboot
 set netboot netboot/${arch}
-iseq ${report} true && set boot_params ${boot_params} debconf/report_url=${report_url} ||
-iseq ${report} true && set boot_params ${boot_params} debconf/report_frontend=${frontend} ||
-iseq ${report} true && set frontend report ||
-iseq ${frontend} default || set boot_params ${boot_params} DEBIAN_FRONTEND=${frontend}
-kernel ${netboot}/linux initrd=rd.gz initrd=preseed ${boot_params} || goto menu_arch
-initrd --name rd.gz ${netboot}/initrd.gz
-initrd --name preseed preseed.php?uuid=${uuid} preseed.cfg
-show boot_params
-iseq ${confirm_boot} true || prompt Press any key to boot ${boot_method} || goto ${menu_previous}
-boot
+kernel ${netboot}/linux initrd=rd.gz initrd=preseed ${installer_boot_params} ${boot_params} || goto boot_failed
+initrd --name rd.gz ${netboot}/initrd.gz || goto boot_failed
+initrd --name preseed preseed.php?uuid=${uuid} preseed.cfg || goto boot_failed
+# We only ask for that if not in auto mode
+iseq ${auto} false || goto do_netboot_confirm
+menu Boot with the selected options?
+item --gap Boot method: ${boot_method}
+item --gap Architecture: ${arch}
+item --gap Frontend: ${frontend}
+iseq ${boot_method} install && item --gap Report: ${report} ||
+iseq ${boot_method} install && iseq ${report} true && item --gap Report URL: ${report_url} ||
+item --gap Boot parameters: ${boot_params}
+item --gap
+item true Yes
+item false No
+choose confirm_boot && iseq ${confirm_boot} true || goto boot_reset
+:do_netboot_confirm
+boot || goto boot_failed
 
-:boot_shell
-shell
 
-<?php
-	menu_boot_method();
-	menu_arch();
-	menu_frontend();
-	menu_report();
-	menu_report_url();
-?>
+
+
+:shell
+shell || goto boot_failed
+goto init
+
+
+
+
+:boot_failed
+choose --menu menu_boot_failed --keep dummy ||
+# auto boot (if set) failed, do not try it again
+set auto false
+:boot_reset
+# change defaults
+isset ${boot_method} && set default_boot_method ${boot_method} ||
+isset ${boot_params} && set default_boot_params ${boot_params} ||
+isset ${report} && set default_report ${report} ||
+isset ${report_url} && set default_report_url ${report_url} ||
+isset ${arch} && set default_arch ${arch} ||
+isset ${frontend} && set default_frontend ${frontend} ||
+# make sure questions are asked again
+clear boot_method
+clear boot_params
+clear report
+clear report_url
+clear arch
+clear frontend
+goto init

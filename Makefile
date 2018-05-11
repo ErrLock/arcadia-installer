@@ -73,6 +73,14 @@ $(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer
 		for file in linux initrd.gz; do \
 			$(INSTALL) -t "$@/$$arch" "$</$$arch/$$file"; \
 		done; \
+		case $$arch in \
+			amd64) \
+				$(LINK_R) "$@/$$arch" "$@/x86_64"; \
+				;; \
+			armel) \
+				$(LINK_R) "$@/$$arch" "$@/arm32"; \
+				;; \
+		esac; \
 	done
 
 .PHONY: $(DESTDIR)$(datadir)/web/config.php
