@@ -56,6 +56,7 @@ foreach($conf->get_all() as $setting)
 }
 ?>
 # Set defaults
+isset ${auto} && iseq ${auto} true || set auto false
 isset ${default_boot_method} || set default_boot_method bios
 isset ${default_boot_params} || set default_boot_params ${}
 isset ${default_report} || set default_report true
