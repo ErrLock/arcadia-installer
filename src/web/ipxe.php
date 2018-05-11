@@ -2,14 +2,9 @@
 <?php
 require_once(__DIR__ .'/bootstrap.php');
 
-foreach($conf->get_all() as $setting)
-{
-	if($setting['key'] != 'auto')
-	{
-		$setting['key'] = 'default_'. $setting['key'];
-	}
-	echo "set ". $setting['key'] ." ". $setting['value'] ."\n";
-}
+/*
+ * The booted system can get its uuid from /sys/class/dmi/id/product_uuid
+ */
 
 function menu(string $id, string $title = null, array $item_list=array())
 {
@@ -48,12 +43,23 @@ menu('frontend', "Select frontend", array(
 	'default' => 'Default'
 ));
 menu('boot_failed', "!!!! BOOT FAILED !!!!", array('dummy' => "OK"));
+
+echo "set web_host ". ARCADIA_WEB_HOST ."\n";
+
+foreach($conf->get_all() as $setting)
+{
+	if($setting['key'] != 'auto')
+	{
+		$setting['key'] = 'default_'. $setting['key'];
+	}
+	echo "set ". $setting['key'] ." ". $setting['value'] ."\n";
+}
 ?>
 # Set defaults
 isset ${default_boot_method} || set default_boot_method bios
 isset ${default_boot_params} || set default_boot_params ${}
 isset ${default_report} || set default_report true
-isset ${default_report_url} || set default_report_url ${}
+isset ${default_report_url} || set default_report_url ${web_host}/report.php
 isset ${default_arch} && goto default_arch_set ||
 # isset ${default_arch} || iseq ${buildarch} foo && set default_arch bar
 # would set default_arch to bar when default_arch is set: (a || b) && c
@@ -138,7 +144,6 @@ set installer_boot_params ${installer_boot_params} DEBIAN_FRONTEND=${frontend}
 
 :select_boot_params
 iseq ${auto} true && goto select_boot_params_set ||
-show installer_boot_params
 set boot_params ${default_boot_params}
 echo -n Boot parameters: ${}
 read boot_params:string || goto boot_reset

@@ -20,6 +20,7 @@ web_sources = $(wildcard $(srcdir)/src/web/*)
 web_install_targets = netboot
 web_install_targets += config.php $(notdir $(web_sources))
 web_install_targets := $(addprefix $(DESTDIR)$(datadir)/web/, $(web_install_targets))
+web_install_targets += $(DESTDIR)$(sysconfdir)/$(pkg_name).ini
 web_host := localhost:8888
 
 all: netboot
@@ -61,8 +62,11 @@ $(DESTDIR)$(sysconfdir):
 
 .PHONY: $(DESTDIR)$(sysconfdir)/$(pkg_name).ini
 $(DESTDIR)$(sysconfdir)/$(pkg_name).ini: $(DESTDIR)$(sysconfdir)
-	echo "[server]" >"$@"; \
-	echo "salt = 'arcadia-installer'" >>"$@"; \
+ifndef web_host
+	error "web_host is not set"
+endif
+	echo "database = 'sqlite:$(DESTDIR)$(sharedstatedir)/$(pkg_name).db'" >"$@"; \
+	echo "web_host = '$(web_host)'" >>"$@"
 
 .PHONY: $(DESTDIR)$(datadir)/netboot
 $(DESTDIR)$(datadir)/netboot: $(d-i_conf)/dest/netboot/debian-installer
