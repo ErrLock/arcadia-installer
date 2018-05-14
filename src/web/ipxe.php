@@ -13,7 +13,7 @@ function menu(string $id, string $title = null, array $item_list=array())
 		$title = "Select ". $id;
 	}
 	$id = "menu_". $id;
-	
+
 	echo "menu --name ". $id ." ". $title ."\n";
 	foreach($item_list as $key => $value)
 	{
@@ -121,11 +121,13 @@ goto netboot
 :select_report
 isset ${report} || choose --menu menu_report --default ${default_report} --keep report || goto boot_reset
 iseq ${report} true || goto select_report_no
+isset ${report_url} && goto select_report_url_set ||
 set report_url ${default_report_url}
 echo -n Report URL: ${}
 read report_url:string || goto boot_reset
-set installer_boot_params ${installer_boot_params} debconf/report_url=${report_url}
-set installer_boot_params ${installer_boot_params} DEBIAN_FRONTEND=report
+:select_report_url_set
+set installer_boot_params ${installer_boot_params} DEBCONF_CONFIG=http_configdb
+set installer_boot_params ${installer_boot_params} DEBCONF_HTTP_QUESTIONS=${report_url}
 :select_report_no
 
 
@@ -138,10 +140,7 @@ isset ${arch} || choose --menu menu_arch --default ${default_arch} --keep arch |
 
 :select_frontend
 isset ${frontend} || choose --menu menu_frontend --default ${default_frontend} --keep frontend || goto boot_reset
-iseq ${frontend} default && goto select_frontend_set ||
-iseq ${boot_method} install && iseq ${report} true && set installer_boot_params ${installer_boot_params} debconf/report_frontend=${frontend} && goto select_frontend_set ||
-set installer_boot_params ${installer_boot_params} DEBIAN_FRONTEND=${frontend}
-:select_frontend_set
+iseq ${frontend} default || set installer_boot_params ${installer_boot_params} DEBIAN_FRONTEND=${frontend}
 
 :select_boot_params
 iseq ${auto} true && goto select_boot_params_set ||

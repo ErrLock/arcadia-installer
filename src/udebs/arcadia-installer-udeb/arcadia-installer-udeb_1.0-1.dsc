@@ -10,11 +10,11 @@ Package-List:
  arcadia-installer-udeb udeb debian-installer optional arch=all
  partman-auto-arcadia udeb debian-installer optional arch=all
 Checksums-Sha1:
- 57e6a509745570632c56c2ccb7ac060d36da8064 1312 arcadia-installer-udeb_1.0.orig.tar.gz
- 58a1d5614e484ba385ba55b27358a0e7748a8a46 2748 arcadia-installer-udeb_1.0-1.debian.tar.xz
+ 46bbe1103a291242a7db7a566597c69cf038831e 1312 arcadia-installer-udeb_1.0.orig.tar.gz
+ d1492852d79beadb564e73aeeaee2d4d1dffcede 2748 arcadia-installer-udeb_1.0-1.debian.tar.xz
 Checksums-Sha256:
- e628e0a06ee3805769559eeba1e839061c8e1a3f341774c0170311ebb7ddd20a 1312 arcadia-installer-udeb_1.0.orig.tar.gz
- 951be377b4da0cb5ee1eb5e0c7c9423632ec5ddd4025947b7246f9e4aacdd4e3 2748 arcadia-installer-udeb_1.0-1.debian.tar.xz
+ 98316bc76e82be1e6056ceef6b30126dc3836233a1ff260f842608f52750d142 1312 arcadia-installer-udeb_1.0.orig.tar.gz
+ a1059640e7f4e8ea51f5656572367324fe3a7d72e21583b3e3d6068f2d50573c 2748 arcadia-installer-udeb_1.0-1.debian.tar.xz
 Files:
- 8dcebf05e04a51cf7eccc9fe9823cefe 1312 arcadia-installer-udeb_1.0.orig.tar.gz
- e7fe8bac0fc3c8bc4a10081de2ba3084 2748 arcadia-installer-udeb_1.0-1.debian.tar.xz
+ 9f5c06457e13e6e0e1650edcaf6e8c80 1312 arcadia-installer-udeb_1.0.orig.tar.gz
+ d6f2106c69c8d5a37c645d69e05e0205 2748 arcadia-installer-udeb_1.0-1.debian.tar.xz
