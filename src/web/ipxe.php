@@ -126,8 +126,8 @@ set report_url ${default_report_url}
 echo -n Report URL: ${}
 read report_url:string || goto boot_reset
 :select_report_url_set
-set installer_boot_params ${installer_boot_params} DEBCONF_CONFIG=http_configdb
-set installer_boot_params ${installer_boot_params} DEBCONF_HTTP_QUESTIONS=${report_url}
+set installer_boot_params ${installer_boot_params} installation-progress/method=http
+set installer_boot_params ${installer_boot_params} installation-progress/url=${report_url}
 :select_report_no
 
 
